@@ -1,37 +1,29 @@
-import React, { useMemo } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  SafeAreaView,
-  TouchableOpacity,
-} from "react-native";
+import { SkillSwapColors, gradients } from "@/constants/skillswap-colors";
+import { useSkillSwap } from "@/hooks/use-skillswap-store";
+import { Transaction } from "@/types";
 import { LinearGradient } from "expo-linear-gradient";
 import {
-  Wallet,
-  TrendingUp,
-  TrendingDown,
-  Gift,
-  Plus,
-  ArrowUpRight,
   ArrowDownLeft,
+  ArrowUpRight,
+  Gift,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
 } from "lucide-react-native";
-import { useSkillSwap } from "@/hooks/use-skillswap-store";
-import { SkillSwapColors, gradients } from "@/constants/skillswap-colors";
-import { Transaction } from "@/types";
+import React, { useMemo } from "react";
+import { FlatList, SafeAreaView, StyleSheet, Text, View } from "react-native";
 
 export default function WalletScreen() {
   const { currentUser, transactions } = useSkillSwap();
 
   const stats = useMemo(() => {
     const earned = transactions
-      .filter((t : any ) => t.type === "earned")
-      .reduce((sum : any, t : any) => sum + t.amount, 0);
+      .filter((t: any) => t.type === "earned")
+      .reduce((sum: any, t: any) => sum + t.amount, 0);
 
     const spent = transactions
       .filter((t: any) => t.type === "spent")
-      .reduce((sum : any, t: any) => sum + t.amount, 0);
+      .reduce((sum: any, t: any) => sum + t.amount, 0);
 
     const bonus = transactions
       .filter((t: any) => t.type === "bonus")
