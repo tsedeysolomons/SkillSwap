@@ -3,7 +3,7 @@
 # dependencies
 node_modules/
 
-# Expo
+# Expo (frontend)
 .expo/
 dist/
 web-build/
@@ -32,6 +32,7 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
 
 # typescript
 *.tsbuildinfo
@@ -39,5 +40,13 @@ yarn-error.*
 app-example
 
 # generated native folders
-/ios
-/android
+/frontend/ios
+/frontend/android
+
+# Backend
+/backend/node_modules
+/backend/dist
+/backend/.env
+
+# IDE
+.vs/

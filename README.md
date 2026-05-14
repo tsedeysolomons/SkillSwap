@@ -1,51 +1,40 @@
-# Welcome to your Expo app 👋
+# SkillSwap
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A peer-to-peer skill exchange platform where users can teach and learn from each other.
 
-## Get started
+## Project Structure
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+SkillSwap/
+├── frontend/       # React Native / Expo mobile app
+├── backend/        # Node.js API server (coming soon)
+├── database/       # Database schemas, migrations & seeds
+├── .gitignore
+└── README.md
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Frontend
 
-## Learn more
+The frontend is a **React Native** app built with **Expo** and **TypeScript**.
 
-To learn more about developing your project with Expo, look at the following resources:
+### Getting Started
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+cd frontend
+npm install
+npx expo start
+```
 
-## Join the community
+See [frontend/README.md](frontend/README.md) (if available) for more details.
 
-Join our community of developers creating universal apps.
+## Backend
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
->>>>>>> f53a1e0 (Initial commit)
+The backend server will provide REST APIs for authentication, skill management, session booking, and more.
+
+See [backend/README.md](backend/README.md) for planned structure.
+
+## Database
+
+Database schemas and migrations for PostgreSQL.
+
+See [database/README.md](database/README.md) for planned structure.
