@@ -1,23 +1,22 @@
+import {
+  mockNotifications,
+  mockReviews,
+  mockSessions,
+  mockSkills,
+  mockTransactions,
+} from "@/mocks/skillswap-data";
+import {
+  Notification,
+  Review,
+  Session,
+  Skill,
+  Transaction,
+  User,
+} from "@/types";
 import createContextHook from "@nkzw/create-context-hook";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
-import {
-  User,
-  Skill,
-  Session,
-  Review,
-  Transaction,
-  Notification,
-} from "@/types";
-import {
-  mockUsers,
-  mockSkills,
-  mockSessions,
-  mockReviews,
-  mockTransactions,
-  mockNotifications,
-} from "@/mocks/skillswap-data";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 interface SkillSwapStore {
   currentUser: User | null;
@@ -37,13 +36,13 @@ interface SkillSwapStore {
     teacherId: string,
     skillId: string,
     scheduledAt: string,
-    duration: number
+    duration: number,
   ) => Promise<void>;
   cancelSession: (sessionId: string) => Promise<void>;
   addReview: (
     sessionId: string,
     rating: number,
-    comment: string
+    comment: string,
   ) => Promise<void>;
   markNotificationRead: (notificationId: string) => void;
   setSearchQuery: (query: string) => void;
@@ -81,7 +80,7 @@ export const [SkillSwapProvider, useSkillSwap] =
         return mockSessions.filter(
           (session) =>
             session.teacherId === currentUser.id ||
-            session.learnerId === currentUser.id
+            session.learnerId === currentUser.id,
         );
       },
       enabled: !!currentUser,
@@ -99,7 +98,7 @@ export const [SkillSwapProvider, useSkillSwap] =
       queryFn: async () => {
         if (!currentUser) return [];
         return mockTransactions.filter(
-          (transaction) => transaction.userId === currentUser.id
+          (transaction) => transaction.userId === currentUser.id,
         );
       },
       enabled: !!currentUser,
@@ -111,7 +110,7 @@ export const [SkillSwapProvider, useSkillSwap] =
       queryFn: async () => {
         if (!currentUser) return [];
         return mockNotifications.filter(
-          (notification) => notification.userId === currentUser.id
+          (notification) => notification.userId === currentUser.id,
         );
       },
       enabled: !!currentUser,
@@ -123,6 +122,12 @@ export const [SkillSwapProvider, useSkillSwap] =
       }
     }, [userQuery.data]);
 
+    // API base (adjust if backend runs elsewhere)
+    const API_BASE =
+      typeof process !== "undefined" && process.env?.SKILLSWAP_API_URL
+        ? process.env.SKILLSWAP_API_URL
+        : "http://localhost:5000";
+
     // Login mutation
     const loginMutation = useMutation({
       mutationFn: async ({
@@ -132,17 +137,19 @@ export const [SkillSwapProvider, useSkillSwap] =
         email: string;
         password: string;
       }) => {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Find user by email (mock authentication)
-        const user = mockUsers.find((u) => u.email === email);
-        if (!user) {
-          throw new Error("Invalid credentials");
+        const resp = await fetch(`${API_BASE}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => null);
+          throw new Error(err?.message || resp.statusText || "Login failed");
         }
-
-        await AsyncStorage.setItem("currentUser", JSON.stringify(user));
-        return user;
+        const data = await resp.json();
+        await AsyncStorage.setItem("jwtToken", data.token);
+        await AsyncStorage.setItem("currentUser", JSON.stringify(data.user));
+        return data.user;
       },
       onSuccess: (user) => {
         setCurrentUser(user);
@@ -156,27 +163,31 @@ export const [SkillSwapProvider, useSkillSwap] =
     // Register mutation
     const registerMutation = useMutation({
       mutationFn: async (userData: Partial<User>) => {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const resp = await fetch(`${API_BASE}/api/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: userData.name,
+            email: userData.email,
+            password:
+              (userData as any).password || (userData as any).pass || "",
+            bio: userData.bio,
+            location: userData.location,
+            timezone: userData.timezone || "UTC",
+          }),
+        });
 
-        const newUser: User = {
-          id: Date.now().toString(),
-          name: userData.name || "",
-          email: userData.email || "",
-          bio: userData.bio || "",
-          location: userData.location || "",
-          timezone: userData.timezone || "UTC",
-          credits: 50, // Welcome bonus
-          rating: 0,
-          totalSessions: 0,
-          skillsOffered: [],
-          skillsWanted: userData.skillsWanted || [],
-          languages: userData.languages || ["English"],
-          joinedAt: new Date().toISOString(),
-        };
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => null);
+          throw new Error(
+            err?.message || resp.statusText || "Registration failed",
+          );
+        }
 
-        await AsyncStorage.setItem("currentUser", JSON.stringify(newUser));
-        return newUser;
+        const data = await resp.json();
+        await AsyncStorage.setItem("jwtToken", data.token);
+        await AsyncStorage.setItem("currentUser", JSON.stringify(data.user));
+        return data.user;
       },
       onSuccess: (user) => {
         setCurrentUser(user);
@@ -263,9 +274,9 @@ export const [SkillSwapProvider, useSkillSwap] =
           return old.map((notification) =>
             notification.id === notificationId
               ? { ...notification, read: true }
-              : notification
+              : notification,
           );
-        }
+        },
       );
     };
 
@@ -293,7 +304,7 @@ export const [SkillSwapProvider, useSkillSwap] =
         teacherId: string,
         skillId: string,
         scheduledAt: string,
-        duration: number
+        duration: number,
       ) => {
         await bookSessionMutation.mutateAsync({
           teacherId,

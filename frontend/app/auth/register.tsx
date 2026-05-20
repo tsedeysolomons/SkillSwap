@@ -1,19 +1,19 @@
+import { SkillSwapColors, gradients } from "@/constants/skillswap-colors";
+import { useSkillSwap } from "@/hooks/use-skillswap-store";
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { Eye, EyeOff, Lock, Mail, MapPin, User } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
+  Alert,
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
-  Alert,
-  ScrollView,
+  View,
 } from "react-native";
-import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
-import { User, Mail, Lock, MapPin, Eye, EyeOff } from "lucide-react-native";
-import { useSkillSwap } from "@/hooks/use-skillswap-store";
-import { SkillSwapColors, gradients } from "@/constants/skillswap-colors";
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
@@ -54,6 +54,7 @@ export default function RegisterScreen() {
       await register({
         name: formData.name,
         email: formData.email,
+        password: formData.password,
         location: formData.location,
         bio: formData.bio,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -64,7 +65,7 @@ export default function RegisterScreen() {
     } catch (error) {
       Alert.alert(
         "Registration Failed",
-        error instanceof Error ? error.message : "Something went wrong"
+        error instanceof Error ? error.message : "Something went wrong",
       );
     }
   };
