@@ -50,3 +50,8 @@ app-example
 
 # IDE
 .vs/
+
+# Documentation files (except README.md)
+*.md
+!README.md
+!**/README.md
