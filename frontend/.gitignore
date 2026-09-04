@@ -4,3 +4,14 @@
 
 expo-env.d.ts
 # @end expo-cli
+
+# Metro bundler cache
+node_modules/.cache/
+.expo/
+.expo-shared/
+
+# Performance optimization
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

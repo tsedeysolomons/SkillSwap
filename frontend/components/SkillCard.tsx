@@ -1,8 +1,8 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { Star, Clock, Users } from "lucide-react-native";
-import { Skill } from "@/types";
 import { SkillSwapColors } from "@/constants/skillswap-colors";
+import { Skill } from "@/types";
+import { Star, Users } from "lucide-react-native";
+import React from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface SkillCardProps {
   skill: Skill;
@@ -66,10 +66,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    shadowColor: SkillSwapColors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
     elevation: 3,
   },
   header: {

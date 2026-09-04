@@ -4,11 +4,13 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
+    "start:fast": "expo start --clear --offline",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "clean": "rm -rf node_modules/.cache .expo && expo start --clear"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
