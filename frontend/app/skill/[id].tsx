@@ -1,24 +1,24 @@
+import { SkillSwapColors } from "@/constants/skillswap-colors";
+import { useSkillSwap } from "@/hooks/use-skillswap-store";
+import { router, useLocalSearchParams } from "expo-router";
+import {
+    Calendar,
+    Clock,
+    MapPin,
+    MessageCircle,
+    Star,
+    Users,
+} from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  Alert,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import {
-  Star,
-  MapPin,
-  Clock,
-  Users,
-  Calendar,
-  MessageCircle,
-} from "lucide-react-native";
-import { useSkillSwap } from "@/hooks/use-skillswap-store";
-import { SkillSwapColors } from "@/constants/skillswap-colors";
 
 export default function SkillDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -115,7 +115,7 @@ export default function SkillDetailScreen() {
                   fill={SkillSwapColors.accent}
                 />
                 <Text style={styles.statText}>
-                  {skill.user.rating.toFixed(1)}
+                  {(skill?.user?.rating ?? 0).toFixed(1)}
                 </Text>
               </View>
               <View style={styles.stat}>

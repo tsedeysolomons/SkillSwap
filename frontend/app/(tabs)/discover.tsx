@@ -81,7 +81,7 @@ export default function DiscoverScreen() {
           <View style={styles.stat}>
             <Star size={20} stroke={SkillSwapColors.white} />
             <Text style={styles.statNumber}>
-              {stats.averageRating.toFixed(1)}
+              {(stats?.averageRating ?? 0).toFixed(1)}
             </Text>
             <Text style={styles.statLabel}>Avg Rating</Text>
           </View>

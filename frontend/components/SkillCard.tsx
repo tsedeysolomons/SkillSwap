@@ -48,7 +48,7 @@ export default function SkillCard({ skill, onPress }: SkillCardProps) {
               color={SkillSwapColors.accent}
               fill={SkillSwapColors.accent}
             />
-            <Text style={styles.statText}>{skill.rating.toFixed(1)}</Text>
+            <Text style={styles.statText}>{(skill?.rating ?? 0).toFixed(1)}</Text>
           </View>
           <View style={styles.stat}>
             <Users size={14} color={SkillSwapColors.textSecondary} />

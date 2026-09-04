@@ -1,36 +1,64 @@
-import React from "react";
+import { SkillSwapColors } from "@/constants/skillswap-colors";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-  TouchableOpacity,
-  Image,
-} from "react-native";
+    useSkillSwap,
+    useUnreadNotifications,
+} from "@/hooks/use-skillswap-store";
 import { router } from "expo-router";
 import {
-  Edit,
-  MapPin,
-  Globe,
-  Star,
-  Users,
-  Award,
-  Settings,
-  Bell,
-  LogOut,
+    Award,
+    Bell,
+    Edit,
+    Globe,
+    LogOut,
+    MapPin,
+    Settings,
+    Star,
+    Users,
 } from "lucide-react-native";
+import React from "react";
 import {
-  useSkillSwap,
-  useUnreadNotifications,
-} from "@/hooks/use-skillswap-store";
-import { SkillSwapColors } from "@/constants/skillswap-colors";
+    ActivityIndicator,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 export default function ProfileScreen() {
-  const { currentUser, logout } = useSkillSwap();
+  const { currentUser, logout, isLoading } = useSkillSwap();
   const unreadNotifications = useUnreadNotifications();
 
-  if (!currentUser) return null;
+  // Loading state
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={SkillSwapColors.primary} />
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // No user state
+  if (!currentUser) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>Please log in to view your profile</Text>
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => router.replace("../auth/login")}
+          >
+            <Text style={styles.loginButtonText}>Go to Login</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const handleLogout = async () => {
     await logout();
@@ -106,19 +134,19 @@ export default function ProfileScreen() {
             <View style={styles.stat}>
               <Star size={20} color={SkillSwapColors.accent} />
               <Text style={styles.statNumber}>
-                {currentUser.rating.toFixed(1)}
+                {(currentUser?.rating ?? 0).toFixed(1)}
               </Text>
               <Text style={styles.statLabel}>Rating</Text>
             </View>
             <View style={styles.stat}>
               <Users size={20} color={SkillSwapColors.primary} />
-              <Text style={styles.statNumber}>{currentUser.totalSessions}</Text>
+              <Text style={styles.statNumber}>{currentUser?.totalSessions ?? 0}</Text>
               <Text style={styles.statLabel}>Sessions</Text>
             </View>
             <View style={styles.stat}>
               <Award size={20} color={SkillSwapColors.secondary} />
               <Text style={styles.statNumber}>
-                {currentUser.skillsOffered.length}
+                {currentUser?.skillsOffered?.length ?? 0}
               </Text>
               <Text style={styles.statLabel}>Skills</Text>
             </View>
@@ -127,7 +155,7 @@ export default function ProfileScreen() {
 
         <View style={styles.skillsSection}>
           <Text style={styles.sectionTitle}>Skills I Offer</Text>
-          {currentUser.skillsOffered.length > 0 ? (
+          {currentUser?.skillsOffered && currentUser.skillsOffered.length > 0 ? (
             <View style={styles.skillsList}>
               {currentUser.skillsOffered.map((skill: any) => (
                 <TouchableOpacity
@@ -145,11 +173,11 @@ export default function ProfileScreen() {
                         fill={SkillSwapColors.accent}
                       />
                       <Text style={styles.skillStatText}>
-                        {skill.rating.toFixed(1)}
+                        {(skill?.rating ?? 0).toFixed(1)}
                       </Text>
                     </View>
                     <Text style={styles.skillCredits}>
-                      {skill.creditsPerHour} credits/hr
+                      {skill?.creditsPerHour ?? 0} credits/hr
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -170,7 +198,7 @@ export default function ProfileScreen() {
         <View style={styles.languagesSection}>
           <Text style={styles.sectionTitle}>Languages</Text>
           <View style={styles.languagesList}>
-            {currentUser.languages.map((language : any , index : any) => (
+            {(currentUser?.languages ?? []).map((language : any , index : any) => (
               <View key={index} style={styles.languageTag}>
                 <Globe size={14} color={SkillSwapColors.primary} />
                 <Text style={styles.languageText}>{language}</Text>
@@ -214,6 +242,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: SkillSwapColors.backgroundSecondary,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: SkillSwapColors.textSecondary,
+  },
+  errorText: {
+    fontSize: 18,
+    color: SkillSwapColors.text,
+    marginBottom: 16,
+  },
+  loginButton: {
+    backgroundColor: SkillSwapColors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  loginButtonText: {
+    color: SkillSwapColors.white,
+    fontSize: 16,
+    fontWeight: "600",
   },
   content: {
     paddingBottom: 20,
