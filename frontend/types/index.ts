@@ -6,6 +6,9 @@ export interface User {
   bio: string;
   location: string;
   timezone: string;
+  gender?: "male" | "female" | "other" | "prefer-not-to-say";
+  role?: "teacher" | "student" | "both";
+  ageRange?: "18-24" | "25-34" | "35-44" | "45-54" | "55+";
   credits: number;
   rating: number;
   totalSessions: number;

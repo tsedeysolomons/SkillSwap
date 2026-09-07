@@ -8,9 +8,32 @@ const router = express.Router();
 // Register
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, bio, location, timezone } = req.body;
+    const { name, email, password, bio, location, timezone, gender, role, ageRange } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Validate new required fields
+    if (!gender || !role || !ageRange) {
+      return res.status(400).json({ message: "Please provide gender, role, and age range" });
+    }
+
+    // Validate gender
+    const validGenders = ['male', 'female', 'other', 'prefer-not-to-say'];
+    if (!validGenders.includes(gender)) {
+      return res.status(400).json({ message: "Invalid gender value" });
+    }
+
+    // Validate role
+    const validRoles = ['teacher', 'student', 'both'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ message: "Invalid role value" });
+    }
+
+    // Validate age range
+    const validAgeRanges = ['18-24', '25-34', '35-44', '45-54', '55+'];
+    if (!validAgeRanges.includes(ageRange)) {
+      return res.status(400).json({ message: "Invalid age range value" });
     }
 
     const existing = await db.query("SELECT id FROM users WHERE email = $1", [
@@ -23,8 +46,9 @@ router.post("/register", async (req, res) => {
     const password_hash = await bcrypt.hash(password, 10);
 
     const result = await db.query(
-      `INSERT INTO users (name, email, password_hash, bio, location, timezone)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, name, email, location, timezone, credits, joined_at`,
+      `INSERT INTO users (name, email, password_hash, bio, location, timezone, gender, role, age_range)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) 
+       RETURNING id, name, email, location, timezone, gender, role, age_range, credits, joined_at`,
       [
         name,
         email,
@@ -32,6 +56,9 @@ router.post("/register", async (req, res) => {
         bio || null,
         location || null,
         timezone || "UTC",
+        gender,
+        role,
+        ageRange,
       ],
     );
 
