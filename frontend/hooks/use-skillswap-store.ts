@@ -1,17 +1,17 @@
 import {
-  mockNotifications,
-  mockReviews,
-  mockSessions,
-  mockSkills,
-  mockTransactions,
+    mockNotifications,
+    mockReviews,
+    mockSessions,
+    mockSkills,
+    mockTransactions,
 } from "@/mocks/skillswap-data";
 import {
-  Notification,
-  Review,
-  Session,
-  Skill,
-  Transaction,
-  User,
+    Notification,
+    Review,
+    Session,
+    Skill,
+    Transaction,
+    User,
 } from "@/types";
 import createContextHook from "@nkzw/create-context-hook";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -174,6 +174,9 @@ export const [SkillSwapProvider, useSkillSwap] =
             bio: userData.bio,
             location: userData.location,
             timezone: userData.timezone || "UTC",
+            gender: userData.gender,
+            role: userData.role,
+            ageRange: userData.ageRange,
           }),
         });
 
