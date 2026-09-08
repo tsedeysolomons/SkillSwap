@@ -3,7 +3,7 @@ import { useSkillSwap } from "@/hooks/use-skillswap-store";
 import { Picker } from "@react-native-picker/picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { ChevronDown, Eye, EyeOff, Lock, Mail, MapPin, User, Users } from "lucide-react-native";
+import { Eye, EyeOff, Lock, Mail, MapPin, User } from "lucide-react-native";
 import React, { useState } from "react";
 import {
     Alert,
@@ -176,69 +176,25 @@ export default function RegisterScreen() {
                   <Picker.Item label="Other" value="other" />
                   <Picker.Item label="Prefer not to say" value="prefer-not-to-say" />
                 </Picker>
-                <ChevronDown 
-                  size={20} 
-                  color={SkillSwapColors.textSecondary} 
-                  style={styles.pickerIcon}
-                />
               </View>
             </View>
 
             {/* Role Selection */}
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionLabel}>I want to *</Text>
-              <View style={styles.optionsRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.roleButton,
-                    formData.role === "teacher" && styles.optionButtonActive,
-                  ]}
-                  onPress={() => updateFormData("role", "teacher")}
+            {/* Role Selection - Dropdown */}
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>I want to *</Text>
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={formData.role}
+                  onValueChange={(value) => updateFormData("role", value)}
+                  style={styles.picker}
+                  dropdownIconColor={SkillSwapColors.primary}
                 >
-                  <Users size={20} color={formData.role === "teacher" ? SkillSwapColors.white : SkillSwapColors.primary} />
-                  <Text
-                    style={[
-                      styles.roleText,
-                      formData.role === "teacher" && styles.optionTextActive,
-                    ]}
-                  >
-                    Teach Only
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.roleButton,
-                    formData.role === "student" && styles.optionButtonActive,
-                  ]}
-                  onPress={() => updateFormData("role", "student")}
-                >
-                  <User size={20} color={formData.role === "student" ? SkillSwapColors.white : SkillSwapColors.primary} />
-                  <Text
-                    style={[
-                      styles.roleText,
-                      formData.role === "student" && styles.optionTextActive,
-                    ]}
-                  >
-                    Learn Only
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.roleButton,
-                    formData.role === "both" && styles.optionButtonActive,
-                  ]}
-                  onPress={() => updateFormData("role", "both")}
-                >
-                  <Users size={20} color={formData.role === "both" ? SkillSwapColors.white : SkillSwapColors.primary} />
-                  <Text
-                    style={[
-                      styles.roleText,
-                      formData.role === "both" && styles.optionTextActive,
-                    ]}
-                  >
-                    Both
-                  </Text>
-                </TouchableOpacity>
+                  <Picker.Item label="Select your role..." value="" />
+                  <Picker.Item label="Teach Only" value="teacher" />
+                  <Picker.Item label="Learn Only" value="student" />
+                  <Picker.Item label="Both" value="both" />
+                </Picker>
               </View>
             </View>
 
@@ -259,11 +215,6 @@ export default function RegisterScreen() {
                   <Picker.Item label="45-54" value="45-54" />
                   <Picker.Item label="55+" value="55+" />
                 </Picker>
-                <ChevronDown 
-                  size={20} 
-                  color={SkillSwapColors.textSecondary} 
-                  style={styles.pickerIcon}
-                />
               </View>
             </View>
 
@@ -505,12 +456,6 @@ const styles = StyleSheet.create({
   picker: {
     height: Platform.OS === "ios" ? 180 : 50,
     color: SkillSwapColors.text,
-  },
-  pickerIcon: {
-    position: "absolute",
-    right: 12,
-    top: Platform.OS === "ios" ? 15 : 15,
-    pointerEvents: "none",
   },
   registerButton: {
     backgroundColor: SkillSwapColors.white,
