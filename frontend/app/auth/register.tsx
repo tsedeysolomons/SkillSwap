@@ -1,11 +1,13 @@
 import { SkillSwapColors, gradients } from "@/constants/skillswap-colors";
 import { useSkillSwap } from "@/hooks/use-skillswap-store";
+import { Picker } from "@react-native-picker/picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { Eye, EyeOff, Lock, Mail, MapPin, User, Users } from "lucide-react-native";
+import { ChevronDown, Eye, EyeOff, Lock, Mail, MapPin, User, Users } from "lucide-react-native";
 import React, { useState } from "react";
 import {
     Alert,
+    Platform,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -158,74 +160,27 @@ export default function RegisterScreen() {
               />
             </View>
 
-            {/* Gender Selection */}
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionLabel}>Gender *</Text>
-              <View style={styles.optionsGrid}>
-                <TouchableOpacity
-                  style={[
-                    styles.optionButton,
-                    formData.gender === "male" && styles.optionButtonActive,
-                  ]}
-                  onPress={() => updateFormData("gender", "male")}
+            {/* Gender Selection - Dropdown */}
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Gender *</Text>
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={formData.gender}
+                  onValueChange={(value) => updateFormData("gender", value)}
+                  style={styles.picker}
+                  dropdownIconColor={SkillSwapColors.primary}
                 >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      formData.gender === "male" && styles.optionTextActive,
-                    ]}
-                  >
-                    Male
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.optionButton,
-                    formData.gender === "female" && styles.optionButtonActive,
-                  ]}
-                  onPress={() => updateFormData("gender", "female")}
-                >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      formData.gender === "female" && styles.optionTextActive,
-                    ]}
-                  >
-                    Female
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.optionButton,
-                    formData.gender === "other" && styles.optionButtonActive,
-                  ]}
-                  onPress={() => updateFormData("gender", "other")}
-                >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      formData.gender === "other" && styles.optionTextActive,
-                    ]}
-                  >
-                    Other
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.optionButton,
-                    formData.gender === "prefer-not-to-say" && styles.optionButtonActive,
-                  ]}
-                  onPress={() => updateFormData("gender", "prefer-not-to-say")}
-                >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      formData.gender === "prefer-not-to-say" && styles.optionTextActive,
-                    ]}
-                  >
-                    Prefer not to say
-                  </Text>
-                </TouchableOpacity>
+                  <Picker.Item label="Select gender..." value="" />
+                  <Picker.Item label="Male" value="male" />
+                  <Picker.Item label="Female" value="female" />
+                  <Picker.Item label="Other" value="other" />
+                  <Picker.Item label="Prefer not to say" value="prefer-not-to-say" />
+                </Picker>
+                <ChevronDown 
+                  size={20} 
+                  color={SkillSwapColors.textSecondary} 
+                  style={styles.pickerIcon}
+                />
               </View>
             </View>
 
@@ -287,29 +242,28 @@ export default function RegisterScreen() {
               </View>
             </View>
 
-            {/* Age Range Selection */}
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionLabel}>Age Range *</Text>
-              <View style={styles.optionsGrid}>
-                {(["18-24", "25-34", "35-44", "45-54", "55+"] as AgeRange[]).map((age) => (
-                  <TouchableOpacity
-                    key={age}
-                    style={[
-                      styles.optionButton,
-                      formData.ageRange === age && styles.optionButtonActive,
-                    ]}
-                    onPress={() => updateFormData("ageRange", age)}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        formData.ageRange === age && styles.optionTextActive,
-                      ]}
-                    >
-                      {age}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+            {/* Age Range Selection - Dropdown */}
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Age Range *</Text>
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={formData.ageRange}
+                  onValueChange={(value) => updateFormData("ageRange", value)}
+                  style={styles.picker}
+                  dropdownIconColor={SkillSwapColors.primary}
+                >
+                  <Picker.Item label="Select age range..." value="" />
+                  <Picker.Item label="18-24" value="18-24" />
+                  <Picker.Item label="25-34" value="25-34" />
+                  <Picker.Item label="35-44" value="35-44" />
+                  <Picker.Item label="45-54" value="45-54" />
+                  <Picker.Item label="55+" value="55+" />
+                </Picker>
+                <ChevronDown 
+                  size={20} 
+                  color={SkillSwapColors.textSecondary} 
+                  style={styles.pickerIcon}
+                />
               </View>
             </View>
 
@@ -529,6 +483,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: SkillSwapColors.text,
     fontWeight: "500",
+  },
+  pickerContainer: {
+    backgroundColor: SkillSwapColors.white,
+    borderRadius: 12,
+    padding: 16,
+  },
+  pickerLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: SkillSwapColors.text,
+    marginBottom: 12,
+  },
+  pickerWrapper: {
+    position: "relative",
+    borderWidth: 1,
+    borderColor: SkillSwapColors.backgroundSecondary,
+    borderRadius: 8,
+    backgroundColor: SkillSwapColors.backgroundSecondary,
+  },
+  picker: {
+    height: Platform.OS === "ios" ? 180 : 50,
+    color: SkillSwapColors.text,
+  },
+  pickerIcon: {
+    position: "absolute",
+    right: 12,
+    top: Platform.OS === "ios" ? 15 : 15,
+    pointerEvents: "none",
   },
   registerButton: {
     backgroundColor: SkillSwapColors.white,
