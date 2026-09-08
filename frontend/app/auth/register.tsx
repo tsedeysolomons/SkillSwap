@@ -2,7 +2,7 @@ import { SkillSwapColors, gradients } from "@/constants/skillswap-colors";
 import { useSkillSwap } from "@/hooks/use-skillswap-store";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { Eye, EyeOff, Lock, Mail, MapPin, User } from "lucide-react-native";
+import { Eye, EyeOff, Lock, Mail, MapPin, User, Users } from "lucide-react-native";
 import React, { useState } from "react";
 import {
     Alert,

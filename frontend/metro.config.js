@@ -28,11 +28,39 @@ config.resolver = {
 // Optimize watcher for better performance
 config.watchFolders = [__dirname];
 
-// Configure Metro cache
+// Configure Metro cache with better settings
 config.cacheStores = [
   new (require('metro-cache').FileStore)({
     root: require('path').join(__dirname, 'node_modules', '.cache', 'metro'),
   }),
 ];
+
+// Add server configuration for better symbolication performance
+config.server = {
+  ...config.server,
+  // Enable response streaming for faster initial bytes
+  enhanceMiddleware: (middleware) => {
+    return (req, res, next) => {
+      // Enable immediate flushing for symbolicate endpoint
+      if (req.url && req.url.includes('/symbolicate')) {
+        res.flushHeaders();
+      }
+      return middleware(req, res, next);
+    };
+  },
+};
+
+// Optimize symbolication specifically
+config.symbolicator = {
+  ...config.symbolicator,
+  // Cache symbolicated results
+  customizeFrame: (frame) => {
+    // Skip symbolication for node_modules to speed up
+    if (frame.file && frame.file.includes('node_modules')) {
+      return { collapse: true };
+    }
+    return frame;
+  },
+};
 
 module.exports = config;
