@@ -2,8 +2,21 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require("../db");
+const { mapUser } = require("../serialize");
 
 const router = express.Router();
+
+// Columns safe to hand back to the client.
+const USER_COLUMNS = `
+  id, name, email, avatar_url, bio, location, timezone, gender, role, age_range,
+  credits, rating, total_sessions, languages, joined_at
+`;
+
+function signToken(userId) {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+  });
+}
 
 // Register
 router.post("/register", async (req, res) => {
@@ -47,8 +60,8 @@ router.post("/register", async (req, res) => {
 
     const result = await db.query(
       `INSERT INTO users (name, email, password_hash, bio, location, timezone, gender, role, age_range)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) 
-       RETURNING id, name, email, location, timezone, gender, role, age_range, credits, joined_at`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       RETURNING ${USER_COLUMNS}`,
       [
         name,
         email,
@@ -62,12 +75,10 @@ router.post("/register", async (req, res) => {
       ],
     );
 
-    const user = result.rows[0];
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES_IN || "7d",
-    });
+    const user = mapUser(result.rows[0]);
+    const token = signToken(user.id);
 
-    res.json({ token, user });
+    res.status(201).json({ token, user });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -82,23 +93,18 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Missing email or password" });
     }
 
-    const result = await db.query(
-      "SELECT id, name, email, password_hash, location, credits FROM users WHERE email = $1",
-      [email],
-    );
+    const result = await db.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
 
-    const user = result.rows[0];
-    if (!user) return res.status(401).json({ message: "Invalid credentials" });
+    const row = result.rows[0];
+    if (!row) return res.status(401).json({ message: "Invalid credentials" });
 
-    const match = await bcrypt.compare(password, user.password_hash);
+    const match = await bcrypt.compare(password, row.password_hash);
     if (!match) return res.status(401).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES_IN || "7d",
-    });
-
-    // Remove password_hash before returning
-    delete user.password_hash;
+    const user = mapUser(row);
+    const token = signToken(user.id);
 
     res.json({ token, user });
   } catch (err) {

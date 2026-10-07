@@ -1,10 +1,9 @@
 import {
-    mockNotifications,
-    mockReviews,
-    mockSessions,
-    mockSkills,
-    mockTransactions,
-} from "@/mocks/skillswap-data";
+    ApiError,
+    api,
+    TOKEN_KEY,
+    USER_KEY,
+} from "@/api/client";
 import {
     Notification,
     Review,
@@ -16,7 +15,7 @@ import {
 import createContextHook from "@nkzw/create-context-hook";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface SkillSwapStore {
   currentUser: User | null;
@@ -30,7 +29,7 @@ interface SkillSwapStore {
   selectedCategory: string;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (userData: Partial<User>) => Promise<void>;
+  register: (userData: Partial<User> & { password?: string }) => Promise<void>;
   updateProfile: (userData: Partial<User>) => Promise<void>;
   bookSession: (
     teacherId: string,
@@ -53,82 +52,97 @@ interface SkillSwapStore {
 export const [SkillSwapProvider, useSkillSwap] =
   createContextHook<SkillSwapStore>(() => {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [token, setToken] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [selectedCategory, setSelectedCategory] = useState<string>("All");
     const queryClient = useQueryClient();
 
-    // Load user from storage
-    const userQuery = useQuery({
-      queryKey: ["currentUser"],
+    // Restore the session from device storage on cold start.
+    const bootQuery = useQuery({
+      queryKey: ["boot"],
       queryFn: async () => {
-        const stored = await AsyncStorage.getItem("currentUser");
-        return stored ? JSON.parse(stored) : null;
+        const [storedToken, storedUser] = await Promise.all([
+          AsyncStorage.getItem(TOKEN_KEY),
+          AsyncStorage.getItem(USER_KEY),
+        ]);
+        return {
+          token: storedToken,
+          user: storedUser ? (JSON.parse(storedUser) as User) : null,
+        };
       },
-    });
-
-    // Load skills
-    const skillsQuery = useQuery({
-      queryKey: ["skills"],
-      queryFn: async () => mockSkills,
-    });
-
-    // Load sessions for current user
-    const sessionsQuery = useQuery({
-      queryKey: ["sessions", currentUser?.id],
-      queryFn: async () => {
-        if (!currentUser) return [];
-        return mockSessions.filter(
-          (session) =>
-            session.teacherId === currentUser.id ||
-            session.learnerId === currentUser.id,
-        );
-      },
-      enabled: !!currentUser,
-    });
-
-    // Load reviews
-    const reviewsQuery = useQuery({
-      queryKey: ["reviews"],
-      queryFn: async () => mockReviews,
-    });
-
-    // Load transactions for current user
-    const transactionsQuery = useQuery({
-      queryKey: ["transactions", currentUser?.id],
-      queryFn: async () => {
-        if (!currentUser) return [];
-        return mockTransactions.filter(
-          (transaction) => transaction.userId === currentUser.id,
-        );
-      },
-      enabled: !!currentUser,
-    });
-
-    // Load notifications for current user
-    const notificationsQuery = useQuery({
-      queryKey: ["notifications", currentUser?.id],
-      queryFn: async () => {
-        if (!currentUser) return [];
-        return mockNotifications.filter(
-          (notification) => notification.userId === currentUser.id,
-        );
-      },
-      enabled: !!currentUser,
     });
 
     useEffect(() => {
-      if (userQuery.data) {
-        setCurrentUser(userQuery.data);
+      if (!bootQuery.data) return;
+      setToken(bootQuery.data.token);
+      setCurrentUser(bootQuery.data.user);
+    }, [bootQuery.data]);
+
+    const isAuthenticated = !!token;
+
+    // Clearing BOTH keys is what actually signs the user out.
+    // (Previously only currentUser was removed, leaving a live jwtToken behind.)
+    const clearSession = useCallback(async () => {
+      await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
+      setToken(null);
+      setCurrentUser(null);
+      queryClient.clear();
+    }, [queryClient]);
+
+    // The server is the source of truth for credits and stats, so refresh on mount.
+    const meQuery = useQuery({
+      queryKey: ["me", token],
+      queryFn: () => api.me(),
+      enabled: !!token,
+      retry: false,
+    });
+
+    useEffect(() => {
+      if (!meQuery.data) return;
+      setCurrentUser(meQuery.data);
+      AsyncStorage.setItem(USER_KEY, JSON.stringify(meQuery.data)).catch(
+        () => {},
+      );
+    }, [meQuery.data]);
+
+    // An expired or revoked token should sign the user out rather than loop forever.
+    useEffect(() => {
+      const error = meQuery.error as ApiError | null;
+      if (error && (error.status === 401 || error.status === 403)) {
+        void clearSession();
       }
-    }, [userQuery.data]);
+    }, [meQuery.error, clearSession]);
 
-    // API base (adjust if backend runs elsewhere)
-    const API_BASE =
-      typeof process !== "undefined" && process.env?.SKILLSWAP_API_URL
-        ? process.env.SKILLSWAP_API_URL
-        : "http://localhost:5000";
+    const skillsQuery = useQuery({
+      queryKey: ["skills"],
+      queryFn: () => api.skills(),
+    });
 
-    // Login mutation
+    const sessionsQuery = useQuery({
+      queryKey: ["sessions"],
+      queryFn: () => api.sessions(),
+      enabled: !!token,
+    });
+
+    const transactionsQuery = useQuery({
+      queryKey: ["transactions"],
+      queryFn: () => api.transactions(),
+      enabled: !!token,
+    });
+
+    const notificationsQuery = useQuery({
+      queryKey: ["notifications"],
+      queryFn: () => api.notifications(),
+      enabled: !!token,
+    });
+
+    const refreshAfterSessionChange = useCallback(() => {
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["me", token] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    }, [queryClient, token]);
+
     const loginMutation = useMutation({
       mutationFn: async ({
         email,
@@ -137,89 +151,69 @@ export const [SkillSwapProvider, useSkillSwap] =
         email: string;
         password: string;
       }) => {
-        const resp = await fetch(`${API_BASE}/api/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-        if (!resp.ok) {
-          const err = await resp.json().catch(() => null);
-          throw new Error(err?.message || resp.statusText || "Login failed");
-        }
-        const data = await resp.json();
-        await AsyncStorage.setItem("jwtToken", data.token);
-        await AsyncStorage.setItem("currentUser", JSON.stringify(data.user));
-        return data.user;
+        const data = await api.login(email, password);
+        await AsyncStorage.multiSet([
+          [TOKEN_KEY, data.token],
+          [USER_KEY, JSON.stringify(data.user)],
+        ]);
+        return data;
       },
-      onSuccess: (user) => {
-        setCurrentUser(user);
-        queryClient.invalidateQueries({ queryKey: ["currentUser"] });
-        queryClient.invalidateQueries({ queryKey: ["sessions"] });
-        queryClient.invalidateQueries({ queryKey: ["transactions"] });
-        queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      onSuccess: (data) => {
+        setToken(data.token);
+        setCurrentUser(data.user);
+        queryClient.invalidateQueries();
       },
     });
 
-    // Register mutation
     const registerMutation = useMutation({
       mutationFn: async (userData: Partial<User>) => {
-        const resp = await fetch(`${API_BASE}/api/auth/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: userData.name,
-            email: userData.email,
-            password:
-              (userData as any).password || (userData as any).pass || "",
-            bio: userData.bio,
-            location: userData.location,
-            timezone: userData.timezone || "UTC",
-            gender: userData.gender,
-            role: userData.role,
-            ageRange: userData.ageRange,
-          }),
+        const data = await api.register({
+          name: userData.name,
+          email: userData.email,
+          password: (userData as { password?: string })?.password || "",
+          bio: userData.bio,
+          location: userData.location,
+          timezone: userData.timezone || "UTC",
+          gender: userData.gender,
+          role: userData.role,
+          ageRange: userData.ageRange,
         });
-
-        if (!resp.ok) {
-          const err = await resp.json().catch(() => null);
-          throw new Error(
-            err?.message || resp.statusText || "Registration failed",
-          );
-        }
-
-        const data = await resp.json();
-        await AsyncStorage.setItem("jwtToken", data.token);
-        await AsyncStorage.setItem("currentUser", JSON.stringify(data.user));
-        return data.user;
+        await AsyncStorage.multiSet([
+          [TOKEN_KEY, data.token],
+          [USER_KEY, JSON.stringify(data.user)],
+        ]);
+        return data;
       },
-      onSuccess: (user) => {
-        setCurrentUser(user);
-        queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+      onSuccess: (data) => {
+        setToken(data.token);
+        setCurrentUser(data.user);
+        queryClient.invalidateQueries();
       },
     });
 
-    // Update profile mutation
     const updateProfileMutation = useMutation({
       mutationFn: async (userData: Partial<User>) => {
-        if (!currentUser) throw new Error("Not authenticated");
-
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        const updatedUser = { ...currentUser, ...userData };
-        await AsyncStorage.setItem("currentUser", JSON.stringify(updatedUser));
-        return updatedUser;
+        const user = await api.updateProfile({
+          name: userData.name,
+          bio: userData.bio,
+          location: userData.location,
+          timezone: userData.timezone,
+          gender: userData.gender,
+          role: userData.role,
+          ageRange: userData.ageRange,
+          languages: userData.languages,
+        });
+        await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+        return user;
       },
       onSuccess: (user) => {
         setCurrentUser(user);
-        queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+        queryClient.setQueryData(["me", token], user);
       },
     });
 
-    // Book session mutation
     const bookSessionMutation = useMutation({
       mutationFn: async ({
-        teacherId,
         skillId,
         scheduledAt,
         duration,
@@ -228,67 +222,36 @@ export const [SkillSwapProvider, useSkillSwap] =
         skillId: string;
         scheduledAt: string;
         duration: number;
-      }) => {
-        if (!currentUser) throw new Error("Not authenticated");
-
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const skill = mockSkills.find((s) => s.id === skillId);
-        if (!skill) throw new Error("Skill not found");
-
-        const creditsAmount = Math.ceil((duration / 60) * skill.creditsPerHour);
-
-        if (currentUser.credits < creditsAmount) {
-          throw new Error("Insufficient credits");
-        }
-
-        const newSession: Session = {
-          id: Date.now().toString(),
-          teacherId,
-          learnerId: currentUser.id,
+      }) =>
+        api.bookSession({
           skillId,
           scheduledAt,
           duration,
-          status: "pending",
-          creditsAmount,
-          createdAt: new Date().toISOString(),
-        };
+        }),
+      onSuccess: refreshAfterSessionChange,
+    });
 
-        return newSession;
-      },
+    const cancelSessionMutation = useMutation({
+      mutationFn: (sessionId: string) =>
+        api.updateSession(sessionId, { status: "cancelled" }),
+      onSuccess: refreshAfterSessionChange,
+    });
+
+    const markNotificationReadMutation = useMutation({
+      mutationFn: (notificationId: string) =>
+        api.markNotificationRead(notificationId),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["sessions"] });
+        queryClient.invalidateQueries({ queryKey: ["notifications"] });
       },
     });
 
-    const logout = async () => {
-      await AsyncStorage.removeItem("currentUser");
-      setCurrentUser(null);
-      queryClient.clear();
-    };
-
-    const markNotificationRead = (notificationId: string) => {
-      // In a real app, this would make an API call
-      queryClient.setQueryData(
-        ["notifications", currentUser?.id],
-        (old: Notification[] | undefined) => {
-          if (!old) return [];
-          return old.map((notification) =>
-            notification.id === notificationId
-              ? { ...notification, read: true }
-              : notification,
-          );
-        },
-      );
-    };
-
     return {
       currentUser,
-      isAuthenticated: !!currentUser,
+      isAuthenticated,
       skills: skillsQuery.data || [],
       sessions: sessionsQuery.data || [],
-      reviews: reviewsQuery.data || [],
+      // Reviews have no backend endpoint yet; nothing in the UI reads this today.
+      reviews: [],
       transactions: transactionsQuery.data || [],
       notifications: notificationsQuery.data || [],
       searchQuery,
@@ -296,7 +259,7 @@ export const [SkillSwapProvider, useSkillSwap] =
       login: async (email: string, password: string) => {
         await loginMutation.mutateAsync({ email, password });
       },
-      logout,
+      logout: clearSession,
       register: async (userData: Partial<User>) => {
         await registerMutation.mutateAsync(userData);
       },
@@ -317,23 +280,23 @@ export const [SkillSwapProvider, useSkillSwap] =
         });
       },
       cancelSession: async (sessionId: string) => {
-        // Mock implementation
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        queryClient.invalidateQueries({ queryKey: ["sessions"] });
+        await cancelSessionMutation.mutateAsync(sessionId);
       },
-      addReview: async (sessionId: string, rating: number, comment: string) => {
-        // Mock implementation
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        queryClient.invalidateQueries({ queryKey: ["reviews"] });
+      addReview: async () => {
+        throw new Error("Reviews are not implemented on the backend yet");
       },
-      markNotificationRead,
+      markNotificationRead: (notificationId: string) => {
+        markNotificationReadMutation.mutate(notificationId);
+      },
       setSearchQuery,
       setSelectedCategory,
       isLoading:
+        bootQuery.isPending ||
         loginMutation.isPending ||
         registerMutation.isPending ||
         updateProfileMutation.isPending ||
-        bookSessionMutation.isPending,
+        bookSessionMutation.isPending ||
+        cancelSessionMutation.isPending,
     };
   });
 
@@ -344,7 +307,7 @@ export function useFilteredSkills() {
     const matchesSearch =
       skill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       skill.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      skill.user?.name.toLowerCase().includes(searchQuery.toLowerCase());
+      (skill.user?.name ?? "").toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory =
       selectedCategory === "All" || skill.category === selectedCategory;

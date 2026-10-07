@@ -5,20 +5,18 @@ import { useSkillSwap } from "@/hooks/use-skillswap-store";
 import { SkillSwapColors } from "@/constants/skillswap-colors";
 
 export default function IndexScreen() {
-  const { isAuthenticated, currentUser } = useSkillSwap();
+  const { isAuthenticated, isLoading } = useSkillSwap();
 
   useEffect(() => {
-    // Small delay to prevent flash
+    // Wait until the stored session has been read back from device storage.
+    if (isLoading) return;
+
     const timer = setTimeout(() => {
-      if (isAuthenticated && currentUser) {
-        router.replace("../(tabs)/discover");
-      } else {
-        router.replace("../auth/login");
-      }
+      router.replace(isAuthenticated ? "../(tabs)/discover" : "../auth/login");
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [isAuthenticated, currentUser]);
+  }, [isAuthenticated, isLoading]);
 
   return (
     <View
