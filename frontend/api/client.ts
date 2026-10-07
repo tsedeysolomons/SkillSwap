@@ -1,6 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
-import { Notification, Session, Skill, Transaction, User } from "@/types";
+import {
+    Notification,
+    Review,
+    Session,
+    Skill,
+    Transaction,
+    User,
+} from "@/types";
 
 export const TOKEN_KEY = "jwtToken";
 export const USER_KEY = "currentUser";
@@ -146,6 +153,25 @@ export const api = {
     id: string,
     patch: { status?: Session["status"]; notes?: string; meetingLink?: string },
   ) => apiRequest<Session>(`/sessions/${id}`, { method: "PUT", body: patch }),
+
+  // reviews
+  reviews: (filters?: {
+    userId?: string;
+    skillId?: string;
+    sessionId?: string;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters?.userId) params.set("userId", filters.userId);
+    if (filters?.skillId) params.set("skillId", filters.skillId);
+    if (filters?.sessionId) params.set("sessionId", filters.sessionId);
+    const query = params.toString();
+    return apiRequest<Review[]>(`/reviews${query ? `?${query}` : ""}`);
+  },
+  addReview: (payload: {
+    sessionId: string;
+    rating: number;
+    comment?: string;
+  }) => apiRequest<Review>("/reviews", { method: "POST", body: payload }),
 
   // wallet
   transactions: () => apiRequest<Transaction[]>("/transactions"),

@@ -237,6 +237,23 @@ export const [SkillSwapProvider, useSkillSwap] =
       onSuccess: refreshAfterSessionChange,
     });
 
+    const addReviewMutation = useMutation({
+      mutationFn: ({
+        sessionId,
+        rating,
+        comment,
+      }: {
+        sessionId: string;
+        rating: number;
+        comment: string;
+      }) => api.addReview({ sessionId, rating, comment }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["reviews"] });
+        queryClient.invalidateQueries({ queryKey: ["me", token] });
+        queryClient.invalidateQueries({ queryKey: ["skills"] });
+      },
+    });
+
     const markNotificationReadMutation = useMutation({
       mutationFn: (notificationId: string) =>
         api.markNotificationRead(notificationId),
@@ -282,8 +299,8 @@ export const [SkillSwapProvider, useSkillSwap] =
       cancelSession: async (sessionId: string) => {
         await cancelSessionMutation.mutateAsync(sessionId);
       },
-      addReview: async () => {
-        throw new Error("Reviews are not implemented on the backend yet");
+      addReview: async (sessionId: string, rating: number, comment: string) => {
+        await addReviewMutation.mutateAsync({ sessionId, rating, comment });
       },
       markNotificationRead: (notificationId: string) => {
         markNotificationReadMutation.mutate(notificationId);

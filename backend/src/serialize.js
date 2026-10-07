@@ -76,6 +76,21 @@ function mapTransaction(row) {
   };
 }
 
+function mapReview(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    sessionId: row.session_id,
+    reviewerId: row.reviewer_id,
+    revieweeId: row.reviewee_id,
+    rating: Number(row.rating ?? 0),
+    comment: row.comment || "",
+    createdAt: row.created_at,
+    reviewer: row.reviewer ? mapUser(row.reviewer) : undefined,
+    reviewee: row.reviewee ? mapUser(row.reviewee) : undefined,
+  };
+}
+
 function mapNotification(row) {
   if (!row) return null;
   return {
@@ -94,6 +109,7 @@ module.exports = {
   mapUser,
   mapSkill,
   mapSession,
+  mapReview,
   mapTransaction,
   mapNotification,
 };

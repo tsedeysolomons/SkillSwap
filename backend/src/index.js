@@ -5,6 +5,7 @@ const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const skillRoutes = require("./routes/skills");
 const sessionRoutes = require("./routes/sessions");
+const reviewRoutes = require("./routes/reviews");
 const transactionRoutes = require("./routes/transactions");
 const notificationRoutes = require("./routes/notifications");
 
@@ -26,6 +27,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/skills", skillRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/reviews", reviewRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/wallet", transactionRoutes);
 app.use("/api/notifications", notificationRoutes);
