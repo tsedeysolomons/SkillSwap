@@ -69,18 +69,18 @@ export default function ProfileScreen() {
     {
       icon: <Edit size={20} color={SkillSwapColors.textSecondary} />,
       title: "Edit Profile",
-      onPress: () => console.log("Edit Profile"),
+      onPress: () => router.push("../profile/edit"),
     },
     {
       icon: <Bell size={20} color={SkillSwapColors.textSecondary} />,
       title: "Notifications",
       badge: unreadNotifications.length,
-      onPress: () => console.log("Notifications"),
+      onPress: () => router.push("../notifications"),
     },
     {
       icon: <Settings size={20} color={SkillSwapColors.textSecondary} />,
       title: "Settings",
-      onPress: () => console.log("Settings"),
+      onPress: () => router.push("../settings"),
     },
     {
       icon: <LogOut size={20} color={SkillSwapColors.error} />,

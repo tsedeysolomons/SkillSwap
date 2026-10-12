@@ -55,7 +55,7 @@ export default function SessionsScreen() {
     <SessionCard
       session={item}
       currentUserId={currentUser?.id || ""}
-      onPress={() => console.log("Session details")}
+      onPress={() => router.push(`../session/${item.id}`)}
       onJoinCall={() => handleJoinCall(item)}
     />
   );
@@ -124,7 +124,7 @@ export default function SessionsScreen() {
                 key={session.id}
                 session={session}
                 currentUserId={currentUser?.id || ""}
-                onPress={() => console.log("Session details")}
+                onPress={() => router.push(`../session/${session.id}`)}
                 onJoinCall={() => handleJoinCall(session)}
               />
             ))}
